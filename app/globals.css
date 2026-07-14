@@ -1,6 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --green-deep: #0c3318;
+  --green-deep-2: #0a2a14;
+  --green-panel: #e9f1e1;
+  --green-accent: #5cbb3f;
+}
 
 @keyframes pop-in {
   0% {
@@ -29,4 +38,17 @@
     transform: translateY(110vh) rotate(360deg);
     opacity: 0.9;
   }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--r, 0deg));
+  }
+}
+
+.animate-float {
+  animation: float-slow 4s ease-in-out infinite;
 }

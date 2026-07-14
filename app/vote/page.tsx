@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BrandHeader } from '@/components/BrandHeader';
+import { GreenBackdrop } from '@/components/GreenBackdrop';
 import { Avatar } from '@/components/Avatar';
 
 type Candidate = {
@@ -10,7 +11,7 @@ type Candidate = {
   photo_url: string;
   vision: string;
   age?: string;
-  education?: string;
+  experience?: string;
 };
 
 // State machine eksplisit — JANGAN boolean flag berserakan.
@@ -20,7 +21,6 @@ type VoteState =
   | { step: 'SUBMITTING'; token: string; selected: string }
   | { step: 'SUCCESS' };
 
-// Mapping code → copy (frontend switch by code, bukan message string).
 const COPY: Record<string, string> = {
   INVALID: 'Token tidak valid. Cek lagi kodenya.',
   USED: 'Token ini sudah digunakan untuk memilih.',
@@ -33,8 +33,7 @@ function msg(code?: string): string {
   return (code && COPY[code]) || 'Terjadi kesalahan. Coba lagi sebentar.';
 }
 
-// ── Input token 6-kotak, gaya OTP: auto-pindah fokus, backspace mundur,
-//    paste sekaligus. Tetap 1 sumber kebenaran: string `value` di parent. ──
+// ── Input token 6-kotak gaya OTP ──
 function TokenInput({
   value,
   onChange,
@@ -90,20 +89,20 @@ function TokenInput({
           spellCheck={false}
           maxLength={1}
           aria-label={`Karakter token ${i + 1}`}
-          className="h-14 w-11 rounded-lg border border-gray-300 text-center font-mono text-2xl font-bold uppercase transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-50 sm:h-16 sm:w-12"
+          className="h-14 w-11 rounded-xl border-2 border-forest/15 bg-white text-center font-mono text-2xl font-bold uppercase text-forest transition focus:border-forest-accent focus:outline-none focus:ring-2 focus:ring-forest-accent/30 disabled:opacity-60 sm:h-16 sm:w-12"
         />
       ))}
     </div>
   );
 }
 
-// ── Confetti ringan, CSS-only, buat layar sukses. ──
-const CONFETTI_COLORS = ['#2563eb', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6'];
+// ── Confetti CSS-only ──
+const CONFETTI_COLORS = ['#5cbb3f', '#f4b740', '#e2603b', '#e9f1e1', '#8ad06a'];
 
 function Confetti() {
   const pieces = useMemo(
     () =>
-      Array.from({ length: 28 }, (_, i) => ({
+      Array.from({ length: 32 }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
         delay: Math.random() * 0.5,
@@ -114,7 +113,6 @@ function Confetti() {
       })),
     []
   );
-
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
       {pieces.map((p) => (
@@ -135,9 +133,10 @@ function Confetti() {
   );
 }
 
-// ── Kartu kandidat: expandable buat nampilin CV (umur, pendidikan). ──
-function CandidateCard({
+// ── Baris kandidat ala "Voting Panel", bisa expand nampilin CV ──
+function CandidateRow({
   candidate,
+  index,
   isSelected,
   isExpanded,
   disabled,
@@ -145,6 +144,7 @@ function CandidateCard({
   onToggleExpand,
 }: {
   candidate: Candidate;
+  index: number;
   isSelected: boolean;
   isExpanded: boolean;
   disabled: boolean;
@@ -152,91 +152,84 @@ function CandidateCard({
   onToggleExpand: () => void;
 }) {
   const c = candidate;
-  const hasCv = Boolean(c.age || c.education);
+  const hasCv = Boolean(c.vision || c.age || c.experience);
 
   return (
     <div
-      className={`rounded-2xl border-2 bg-white shadow-sm transition ${
-        isSelected ? 'border-blue-600 ring-2 ring-blue-100' : 'border-transparent'
+      className={`overflow-hidden rounded-2xl border-2 transition ${
+        isSelected ? 'border-forest-accent bg-forest-accent/10' : 'border-transparent bg-white'
       }`}
     >
       <button
         type="button"
         disabled={disabled}
         onClick={onSelect}
-        className="flex w-full gap-4 p-4 text-left disabled:opacity-60"
+        className="flex w-full items-center gap-3 p-3 text-left disabled:opacity-60 sm:gap-4 sm:p-4"
       >
-        <Avatar name={c.name} photoUrl={c.photo_url || undefined} size={72} />
+        <span
+          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 ${
+            isSelected ? 'border-forest-accent bg-forest-accent text-white' : 'border-forest/25'
+          }`}
+        >
+          {isSelected && (
+            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
+              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+        <Avatar name={c.name} photoUrl={c.photo_url || undefined} size={52} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="truncate font-semibold">{c.name}</h2>
-            <span
-              className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs ${
-                isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'
-              }`}
-            >
-              {isSelected && (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-                  <path
-                    d="M5 13l4 4L19 7"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-mono text-xs text-forest/40">{String(index + 1).padStart(2, '0')}</span>
+            <h2 className="truncate font-semibold text-forest">{c.name}</h2>
           </div>
-          {c.vision && (
-            <p className={`mt-1 text-sm text-gray-600 ${isExpanded ? '' : 'line-clamp-2'}`}>
-              {c.vision}
-            </p>
+          {c.experience && (
+            <p className="truncate text-xs text-forest/55">{c.experience}</p>
           )}
         </div>
-      </button>
-
-      {hasCv && (
-        <div className="border-t border-gray-100 px-4">
-          <button
-            type="button"
+        {hasCv && (
+          <span
+            role="button"
+            tabIndex={-1}
             onClick={(e) => {
               e.stopPropagation();
               onToggleExpand();
             }}
-            className="flex w-full items-center justify-between py-2.5 text-sm font-medium text-blue-600"
+            className="flex-shrink-0 rounded-lg p-1.5 text-forest/50 hover:bg-forest/5"
           >
-            {isExpanded ? 'Sembunyikan CV' : 'Lihat CV'}
             <svg
               viewBox="0 0 24 24"
               fill="none"
-              className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
             >
-              <path
-                d="M6 9l6 6 6-6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
-          {isExpanded && (
-            <dl className="grid grid-cols-2 gap-3 pb-4 text-sm">
-              {c.age && (
-                <div>
-                  <dt className="text-gray-400">Umur</dt>
-                  <dd className="font-medium">{c.age} tahun</dd>
-                </div>
-              )}
-              {c.education && (
-                <div>
-                  <dt className="text-gray-400">Pendidikan</dt>
-                  <dd className="font-medium">{c.education}</dd>
-                </div>
-              )}
-            </dl>
+          </span>
+        )}
+      </button>
+
+      {isExpanded && hasCv && (
+        <div className="mx-3 mb-3 rounded-xl bg-forest-panel p-4 sm:mx-4 sm:mb-4">
+          {c.vision && (
+            <div className="mb-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-forest/45">Visi &amp; Misi</div>
+              <p className="mt-0.5 text-sm text-forest/80">{c.vision}</p>
+            </div>
           )}
+          <dl className="grid grid-cols-2 gap-3 text-sm">
+            {c.age && (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-forest/45">Umur</dt>
+                <dd className="mt-0.5 font-medium text-forest">{c.age} tahun</dd>
+              </div>
+            )}
+            {c.experience && (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-forest/45">Pengalaman Organisasi</dt>
+                <dd className="mt-0.5 font-medium text-forest">{c.experience}</dd>
+              </div>
+            )}
+          </dl>
         </div>
       )}
     </div>
@@ -251,7 +244,6 @@ export default function VotePage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
-  // Kandidat read-only publik. Fetch sekali di awal.
   useEffect(() => {
     fetch('/api/candidates')
       .then((r) => r.json())
@@ -276,24 +268,19 @@ export default function VotePage() {
       .catch(() => ({ ok: false, code: 'INVALID' }));
     setVerifying(false);
 
-    if (res.ok) {
-      setState({ step: 'SHOW_BALLOT', token });
-    } else {
-      setState({ step: 'ENTER_TOKEN', error: msg(res.code) });
-    }
+    if (res.ok) setState({ step: 'SHOW_BALLOT', token });
+    else setState({ step: 'ENTER_TOKEN', error: msg(res.code) });
   }
 
   function handleSelect(candidateId: string) {
     if (state.step !== 'SHOW_BALLOT') return;
-    setConfirmed(false); // ganti pilihan → wajib konfirmasi ulang
+    setConfirmed(false);
     setState({ step: 'SHOW_BALLOT', token: state.token, selected: candidateId });
   }
 
   async function handleCast() {
     if (state.step !== 'SHOW_BALLOT' || !state.selected || !confirmed) return;
     const { token, selected } = state;
-
-    // Pindah ke SUBMITTING → tombol ke-disable. Guard utama anti double-vote.
     setState({ step: 'SUBMITTING', token, selected });
 
     const res = await fetch('/api/vote/cast', {
@@ -307,37 +294,30 @@ export default function VotePage() {
     if (res.ok) {
       setState({ step: 'SUCCESS' });
     } else if (res.code === 'LOCK_TIMEOUT') {
-      // Server sibuk → balik ke ballot, boleh coba lagi (token belum hangus).
       setConfirmed(false);
       setState({ step: 'SHOW_BALLOT', token, selected, error: msg(res.code) });
     } else {
-      // USED / BAD_CANDIDATE / INVALID → balik ke input token.
       setTokenInput('');
       setConfirmed(false);
       setState({ step: 'ENTER_TOKEN', error: msg(res.code) });
     }
   }
 
-  // ── SUCCESS: terminal state. Tidak ada tombol back / vote lagi. ──
+  // ── SUCCESS ──
   if (state.step === 'SUCCESS') {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
+      <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden p-6">
+        <GreenBackdrop />
         <Confetti />
-        <BrandHeader />
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
-          <div className="animate-pop-in mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+        <BrandHeader onDark />
+        <div className="w-full max-w-md rounded-3xl bg-forest-panel p-8 text-center shadow-2xl shadow-black/30">
+          <div className="animate-pop-in mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-forest-accent text-white">
             <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
-              <path
-                d="M5 13l4 4L19 7"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-green-700">Suara Terkirim</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="font-display text-3xl font-bold text-forest">Suara Terkirim</h1>
+          <p className="mt-2 text-forest/70">
             Terima kasih sudah memilih. Suara kamu sudah tercatat secara anonim.
           </p>
         </div>
@@ -348,14 +328,12 @@ export default function VotePage() {
   // ── ENTER_TOKEN ──
   if (state.step === 'ENTER_TOKEN') {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
-        <BrandHeader />
-        <form
-          onSubmit={handleVerify}
-          className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm"
-        >
-          <h1 className="text-center text-2xl font-bold">Masukkan Token</h1>
-          <p className="mt-1 text-center text-sm text-gray-500">
+      <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden p-6">
+        <GreenBackdrop />
+        <BrandHeader onDark />
+        <form onSubmit={handleVerify} className="w-full max-w-md rounded-3xl bg-forest-panel p-8 shadow-2xl shadow-black/30">
+          <h1 className="text-center font-display text-3xl font-bold text-forest">Masukkan Token</h1>
+          <p className="mt-1 text-center text-sm text-forest/60">
             Ketik 6 karakter token yang kamu terima.
           </p>
 
@@ -364,15 +342,13 @@ export default function VotePage() {
           </div>
 
           {state.error && (
-            <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-700">
-              {state.error}
-            </p>
+            <p className="mt-4 rounded-lg bg-red-100 px-3 py-2 text-center text-sm text-red-700">{state.error}</p>
           )}
 
           <button
             type="submit"
             disabled={verifying || tokenInput.trim().length !== 6}
-            className="mt-6 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 w-full rounded-xl bg-forest-accent py-3 font-semibold text-forest-deep transition hover:bg-forest-accentDark disabled:cursor-not-allowed disabled:opacity-50"
           >
             {verifying ? 'Memeriksa…' : 'Lanjut'}
           </button>
@@ -388,20 +364,23 @@ export default function VotePage() {
   const selectedCandidate = candidates.find((c) => c.id === selected);
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-3xl">
-        <BrandHeader subtitle="Surat Suara" />
+    <main className="relative min-h-screen overflow-hidden p-6">
+      <GreenBackdrop />
+      <div className="mx-auto max-w-2xl">
+        <BrandHeader subtitle="Surat Suara" onDark />
 
-        <h1 className="mt-6 text-2xl font-bold">Pilih Kandidat</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Pilih satu kandidat, lalu tekan Kirim Suara.
+        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-forest-accent">
+          Panel Pemilihan
         </p>
+        <h1 className="mt-1 font-display text-4xl font-bold text-white">Pilih Kandidat</h1>
+        <p className="mt-1 text-sm text-white/60">Pilih satu kandidat, lalu tekan Kirim Suara.</p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {candidates.map((c) => (
-            <CandidateCard
+        <div className="mt-6 space-y-3">
+          {candidates.map((c, i) => (
+            <CandidateRow
               key={c.id}
               candidate={c}
+              index={i}
               isSelected={selected === c.id}
               isExpanded={expanded === c.id}
               disabled={submitting}
@@ -409,28 +388,24 @@ export default function VotePage() {
               onToggleExpand={() => setExpanded(expanded === c.id ? null : c.id)}
             />
           ))}
-          {candidates.length === 0 && (
-            <p className="text-sm text-gray-400">Memuat kandidat…</p>
-          )}
+          {candidates.length === 0 && <p className="text-sm text-white/50">Memuat kandidat…</p>}
         </div>
 
         {ballotError && (
-          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {ballotError}
-          </p>
+          <p className="mt-4 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700">{ballotError}</p>
         )}
 
         {selectedCandidate && (
-          <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-white p-4 shadow-sm">
+          <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
             <input
               type="checkbox"
               checked={confirmed}
               onChange={(e) => setConfirmed(e.target.checked)}
               disabled={submitting}
-              className="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-200"
+              className="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-white/30 bg-transparent text-forest-accent focus:ring-forest-accent/40"
             />
-            <span className="text-sm text-gray-700">
-              Saya memilih <span className="font-semibold">{selectedCandidate.name}</span> sebagai
+            <span className="text-sm text-white/85">
+              Saya memilih <span className="font-semibold text-white">{selectedCandidate.name}</span> sebagai
               pilihan saya. Suara tidak dapat diubah setelah dikirim.
             </span>
           </label>
@@ -441,7 +416,7 @@ export default function VotePage() {
             type="button"
             onClick={handleCast}
             disabled={submitting || !selected || !confirmed}
-            className="w-full rounded-xl bg-blue-600 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-forest-accent py-4 text-lg font-semibold text-forest-deep shadow-lg shadow-black/25 transition hover:bg-forest-accentDark disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Mengirim…' : 'Kirim Suara'}
           </button>
