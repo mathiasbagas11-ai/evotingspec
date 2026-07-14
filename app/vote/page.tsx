@@ -96,36 +96,37 @@ function TokenInput({
   );
 }
 
-// ── Confetti CSS-only ──
-const CONFETTI_COLORS = ['#5cbb3f', '#f4b740', '#e2603b', '#e9f1e1', '#8ad06a'];
+// ── Confetti CSS-only, meriah ──
+const CONFETTI_COLORS = ['#5cbb3f', '#f4b740', '#e2603b', '#3b82f6', '#a855f7', '#8ad06a', '#ffffff'];
 
-function Confetti() {
+function Confetti({ count = 80 }: { count?: number }) {
   const pieces = useMemo(
     () =>
-      Array.from({ length: 32 }, (_, i) => ({
+      Array.from({ length: count }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
-        delay: Math.random() * 0.5,
-        duration: 2.4 + Math.random() * 1.4,
+        delay: Math.random() * 1.4,
+        duration: 2.6 + Math.random() * 2,
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
         rotate: Math.random() * 360,
-        size: 6 + Math.random() * 6,
+        size: 6 + Math.random() * 9,
+        round: Math.random() > 0.6,
       })),
-    []
+    [count]
   );
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
       {pieces.map((p) => (
         <span
           key={p.id}
-          className="absolute top-0 rounded-sm"
+          className={`absolute top-0 ${p.round ? 'rounded-full' : 'rounded-sm'}`}
           style={{
             left: `${p.left}%`,
             width: p.size,
-            height: p.size * 0.4,
+            height: p.round ? p.size : p.size * 0.45,
             backgroundColor: p.color,
             transform: `rotate(${p.rotate}deg)`,
-            animation: `confetti-fall ${p.duration}s ease-in ${p.delay}s 1 both`,
+            animation: `confetti-fall ${p.duration}s ease-in ${p.delay}s infinite both`,
           }}
         />
       ))}
@@ -133,106 +134,72 @@ function Confetti() {
   );
 }
 
-// ── Baris kandidat ala "Voting Panel", bisa expand nampilin CV ──
-function CandidateRow({
+// ── Kartu kandidat: dua kolom — kiri foto besar, kanan detail lengkap ──
+function CandidateCard({
   candidate,
-  index,
   isSelected,
-  isExpanded,
   disabled,
   onSelect,
-  onToggleExpand,
 }: {
   candidate: Candidate;
-  index: number;
   isSelected: boolean;
-  isExpanded: boolean;
   disabled: boolean;
   onSelect: () => void;
-  onToggleExpand: () => void;
 }) {
   const c = candidate;
-  const hasCv = Boolean(c.vision || c.age || c.experience);
-
   return (
-    <div
-      className={`overflow-hidden rounded-2xl border-2 transition ${
-        isSelected ? 'border-forest-accent bg-forest-accent/10' : 'border-transparent bg-white'
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onSelect}
+      className={`flex w-full gap-4 rounded-2xl border-2 bg-white p-4 text-left transition disabled:opacity-60 sm:gap-5 sm:p-5 ${
+        isSelected ? 'border-forest-accent ring-2 ring-forest-accent/30' : 'border-transparent hover:border-forest/15'
       }`}
     >
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onSelect}
-        className="flex w-full items-center gap-3 p-3 text-left disabled:opacity-60 sm:gap-4 sm:p-4"
-      >
-        <span
-          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 ${
-            isSelected ? 'border-forest-accent bg-forest-accent text-white' : 'border-forest/25'
-          }`}
-        >
-          {isSelected && (
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
-              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </span>
-        <Avatar name={c.name} photoUrl={c.photo_url || undefined} size={52} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-xs text-forest/40">{String(index + 1).padStart(2, '0')}</span>
-            <h2 className="truncate font-semibold text-forest">{c.name}</h2>
-          </div>
-          {c.experience && (
-            <p className="truncate text-xs text-forest/55">{c.experience}</p>
-          )}
-        </div>
-        {hasCv && (
-          <span
-            role="button"
-            tabIndex={-1}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleExpand();
-            }}
-            className="flex-shrink-0 rounded-lg p-1.5 text-forest/50 hover:bg-forest/5"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-            >
-              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-        )}
-      </button>
+      {/* Kiri: foto besar */}
+      <div className="flex-shrink-0">
+        <Avatar name={c.name} photoUrl={c.photo_url || undefined} size={116} />
+      </div>
 
-      {isExpanded && hasCv && (
-        <div className="mx-3 mb-3 rounded-xl bg-forest-panel p-4 sm:mx-4 sm:mb-4">
-          {c.vision && (
-            <div className="mb-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-forest/45">Visi &amp; Misi</div>
-              <p className="mt-0.5 text-sm text-forest/80">{c.vision}</p>
+      {/* Kanan: detail */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-xl font-bold leading-tight text-forest">{c.name}</h2>
+          <span
+            className={`mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 ${
+              isSelected ? 'border-forest-accent bg-forest-accent text-white' : 'border-forest/25'
+            }`}
+          >
+            {isSelected && (
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
+                <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+        </div>
+
+        <dl className="mt-2 space-y-1.5">
+          {c.age && (
+            <div className="flex gap-2 text-sm">
+              <dt className="w-24 flex-shrink-0 font-medium text-forest/50">Umur</dt>
+              <dd className="text-forest/85">{c.age} tahun</dd>
             </div>
           )}
-          <dl className="grid grid-cols-2 gap-3 text-sm">
-            {c.age && (
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-forest/45">Umur</dt>
-                <dd className="mt-0.5 font-medium text-forest">{c.age} tahun</dd>
-              </div>
-            )}
-            {c.experience && (
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-forest/45">Pengalaman Organisasi</dt>
-                <dd className="mt-0.5 font-medium text-forest">{c.experience}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
-      )}
-    </div>
+          {c.experience && (
+            <div className="flex gap-2 text-sm">
+              <dt className="w-24 flex-shrink-0 font-medium text-forest/50">Pengalaman</dt>
+              <dd className="text-forest/85">{c.experience}</dd>
+            </div>
+          )}
+          {c.vision && (
+            <div className="flex gap-2 text-sm">
+              <dt className="w-24 flex-shrink-0 font-medium text-forest/50">Harapan</dt>
+              <dd className="text-forest/85">{c.vision}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+    </button>
   );
 }
 
@@ -241,7 +208,6 @@ export default function VotePage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [tokenInput, setTokenInput] = useState('');
   const [verifying, setVerifying] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
@@ -308,15 +274,19 @@ export default function VotePage() {
     return (
       <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden p-6">
         <GreenBackdrop />
-        <Confetti />
+        <Confetti count={90} />
         <BrandHeader onDark />
-        <div className="w-full max-w-md rounded-3xl bg-forest-panel p-8 text-center shadow-2xl shadow-black/30">
-          <div className="animate-pop-in mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-forest-accent text-white">
-            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
-              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+        <div className="relative w-full max-w-md rounded-3xl bg-forest-panel p-8 text-center shadow-2xl shadow-black/30">
+          <div className="relative mx-auto mb-4 h-20 w-20">
+            <span className="absolute inset-0 animate-ping rounded-full bg-forest-accent/40" />
+            <div className="animate-pop-in relative flex h-20 w-20 items-center justify-center rounded-full bg-forest-accent text-white">
+              <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10">
+                <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </div>
-          <h1 className="font-display text-3xl font-bold text-forest">Suara Terkirim</h1>
+          <div className="mb-1 text-3xl">🎉</div>
+          <h1 className="font-display text-3xl font-bold text-forest">Suara Terkirim!</h1>
           <p className="mt-2 text-forest/70">
             Terima kasih sudah memilih. Suara kamu sudah tercatat secara anonim.
           </p>
@@ -375,17 +345,14 @@ export default function VotePage() {
         <h1 className="mt-1 font-display text-4xl font-bold text-white">Pilih Kandidat</h1>
         <p className="mt-1 text-sm text-white/60">Pilih satu kandidat, lalu tekan Kirim Suara.</p>
 
-        <div className="mt-6 space-y-3">
-          {candidates.map((c, i) => (
-            <CandidateRow
+        <div className="mt-6 space-y-4">
+          {candidates.map((c) => (
+            <CandidateCard
               key={c.id}
               candidate={c}
-              index={i}
               isSelected={selected === c.id}
-              isExpanded={expanded === c.id}
               disabled={submitting}
               onSelect={() => handleSelect(c.id)}
-              onToggleExpand={() => setExpanded(expanded === c.id ? null : c.id)}
             />
           ))}
           {candidates.length === 0 && <p className="text-sm text-white/50">Memuat kandidat…</p>}
