@@ -74,7 +74,9 @@ function readRows(sh) {
 // ─────────────────────────────────────────────────────────────
 
 function getCandidates() {
-  // Kolom: id | name | photo_url | vision
+  // Kolom: id | name | photo_url | vision | age | experience
+  // age & experience (pengalaman organisasi) opsional — kalau kolomnya
+  // belum ada di Sheet, tetap aman (r[4]/r[5] undefined -> string kosong).
   const rows = readRows(sheet('Candidates'));
   const data = rows
     .filter(function (r) { return String(r[0]).trim() !== ''; })
@@ -84,6 +86,8 @@ function getCandidates() {
         name: String(r[1]),
         photo_url: String(r[2]),
         vision: String(r[3]),
+        age: r[4] === undefined || r[4] === '' ? '' : String(r[4]),
+        experience: r[5] === undefined || r[5] === '' ? '' : String(r[5]),
       };
     });
   return { ok: true, data: data };
