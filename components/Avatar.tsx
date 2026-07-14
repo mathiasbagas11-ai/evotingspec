@@ -16,34 +16,44 @@ function paletteFor(seed: string): string {
   return PALETTE[h % PALETTE.length];
 }
 
+// `size` = avatar kotak ukuran tetap (px), buat baris/list.
+// `className` (tanpa `size`) = biarkan lebar/tinggi diatur via class
+// (mis. "h-52 w-full") buat foto banner besar di panel expand.
 export function Avatar({
   name,
   photoUrl,
-  size = 80,
+  size,
+  className = '',
 }: {
   name: string;
   photoUrl?: string;
   size?: number;
+  className?: string;
 }) {
+  const dims = size ? { width: size, height: size } : undefined;
+  const shrink = size ? 'flex-shrink-0' : '';
+
   if (photoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={photoUrl}
         alt={name}
-        style={{ width: size, height: size }}
-        className="flex-shrink-0 rounded-xl object-cover"
+        style={dims}
+        className={`rounded-xl object-cover ${shrink} ${className}`}
       />
     );
   }
   return (
     <div
-      style={{ width: size, height: size }}
-      className={`flex flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white ${paletteFor(
+      style={dims}
+      className={`flex items-center justify-center rounded-xl bg-gradient-to-br font-bold text-white ${paletteFor(
         name || '?'
-      )}`}
+      )} ${shrink} ${className}`}
     >
-      <span style={{ fontSize: size * 0.4 }}>{(name || '?').charAt(0).toUpperCase()}</span>
+      <span style={size ? { fontSize: size * 0.4 } : undefined} className={size ? '' : 'text-7xl'}>
+        {(name || '?').charAt(0).toUpperCase()}
+      </span>
     </div>
   );
 }

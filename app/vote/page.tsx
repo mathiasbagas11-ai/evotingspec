@@ -134,72 +134,102 @@ function Confetti({ count = 80 }: { count?: number }) {
   );
 }
 
-// ── Kartu kandidat: dua kolom — kiri foto besar, kanan detail lengkap ──
+// ── Kartu kandidat: panah kiri = expand detail (foto besar + CV),
+//    bulatan kanan = pilih. Dua aksi terpisah, nggak nyampur. ──
 function CandidateCard({
   candidate,
   isSelected,
+  isExpanded,
   disabled,
   onSelect,
+  onToggleExpand,
 }: {
   candidate: Candidate;
   isSelected: boolean;
+  isExpanded: boolean;
   disabled: boolean;
   onSelect: () => void;
+  onToggleExpand: () => void;
 }) {
   const c = candidate;
+  const hasDetails = Boolean(c.age || c.experience || c.vision);
+
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onSelect}
-      className={`flex w-full gap-4 rounded-2xl border-2 bg-white p-4 text-left transition disabled:opacity-60 sm:gap-5 sm:p-5 ${
-        isSelected ? 'border-forest-accent ring-2 ring-forest-accent/30' : 'border-transparent hover:border-forest/15'
+    <div
+      className={`overflow-hidden rounded-2xl border-2 bg-white transition ${
+        isSelected ? 'border-forest-accent ring-2 ring-forest-accent/30' : 'border-transparent'
       }`}
     >
-      {/* Kiri: foto besar */}
-      <div className="flex-shrink-0">
-        <Avatar name={c.name} photoUrl={c.photo_url || undefined} size={116} />
-      </div>
-
-      {/* Kanan: detail */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <h2 className="text-xl font-bold leading-tight text-forest">{c.name}</h2>
-          <span
-            className={`mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 ${
-              isSelected ? 'border-forest-accent bg-forest-accent text-white' : 'border-forest/25'
-            }`}
+      <div className="flex items-center gap-3 p-4">
+        {hasDetails ? (
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            aria-label={isExpanded ? 'Tutup detail' : 'Lihat detail lengkap'}
+            className="flex-shrink-0 rounded-lg p-1.5 text-forest/50 transition hover:bg-forest/5"
           >
-            {isSelected && (
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
-                <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            >
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : (
+          <span className="w-8 flex-shrink-0" />
+        )}
+
+        <Avatar name={c.name} photoUrl={c.photo_url || undefined} size={56} />
+
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-lg font-bold text-forest">{c.name}</h2>
+          {c.experience && <p className="truncate text-xs text-forest/55">{c.experience}</p>}
         </div>
 
-        <dl className="mt-2 space-y-1.5">
-          {c.age && (
-            <div className="flex gap-2 text-sm">
-              <dt className="w-24 flex-shrink-0 font-medium text-forest/50">Umur</dt>
-              <dd className="text-forest/85">{c.age} tahun</dd>
-            </div>
+        <button
+          type="button"
+          onClick={onSelect}
+          disabled={disabled}
+          aria-label={`Pilih ${c.name}`}
+          className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-50 ${
+            isSelected ? 'border-forest-accent bg-forest-accent text-white' : 'border-forest/25 hover:border-forest-accent'
+          }`}
+        >
+          {isSelected && (
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           )}
-          {c.experience && (
-            <div className="flex gap-2 text-sm">
-              <dt className="w-24 flex-shrink-0 font-medium text-forest/50">Pengalaman</dt>
-              <dd className="text-forest/85">{c.experience}</dd>
-            </div>
-          )}
-          {c.vision && (
-            <div className="flex gap-2 text-sm">
-              <dt className="w-24 flex-shrink-0 font-medium text-forest/50">Harapan</dt>
-              <dd className="text-forest/85">{c.vision}</dd>
-            </div>
-          )}
-        </dl>
+        </button>
       </div>
-    </button>
+
+      {isExpanded && hasDetails && (
+        <div className="px-4 pb-4">
+          <Avatar name={c.name} photoUrl={c.photo_url || undefined} className="mb-3 h-56 w-full" />
+          <dl className="space-y-2 text-sm">
+            {c.age && (
+              <div className="flex gap-2">
+                <dt className="w-28 flex-shrink-0 font-medium text-forest/50">Umur</dt>
+                <dd className="text-forest/85">{c.age} tahun</dd>
+              </div>
+            )}
+            {c.experience && (
+              <div className="flex gap-2">
+                <dt className="w-28 flex-shrink-0 font-medium text-forest/50">Pengalaman</dt>
+                <dd className="text-forest/85">{c.experience}</dd>
+              </div>
+            )}
+            {c.vision && (
+              <div className="flex gap-2">
+                <dt className="w-28 flex-shrink-0 font-medium text-forest/50">Harapan</dt>
+                <dd className="text-forest/85">{c.vision}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -209,6 +239,7 @@ export default function VotePage() {
   const [tokenInput, setTokenInput] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/candidates')
@@ -351,8 +382,10 @@ export default function VotePage() {
               key={c.id}
               candidate={c}
               isSelected={selected === c.id}
+              isExpanded={expanded === c.id}
               disabled={submitting}
               onSelect={() => handleSelect(c.id)}
+              onToggleExpand={() => setExpanded(expanded === c.id ? null : c.id)}
             />
           ))}
           {candidates.length === 0 && <p className="text-sm text-white/50">Memuat kandidat…</p>}
