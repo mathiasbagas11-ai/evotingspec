@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { BrandHeader } from '@/components/BrandHeader';
+import { Avatar } from '@/components/Avatar';
 
 type Candidate = { id: string; name: string; photo_url: string; vision: string };
 
@@ -24,6 +26,70 @@ function msg(code?: string): string {
   return (code && COPY[code]) || 'Terjadi kesalahan. Coba lagi sebentar.';
 }
 
+// ── Input token 6-kotak, gaya OTP: auto-pindah fokus, backspace mundur,
+//    paste sekaligus. Tetap 1 sumber kebenaran: string `value` di parent. ──
+function TokenInput({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
+  const refs = useRef<Array<HTMLInputElement | null>>([]);
+  const chars = Array.from({ length: 6 }, (_, i) => value[i] ?? '');
+
+  useEffect(() => {
+    refs.current[0]?.focus();
+  }, []);
+
+  function setChar(i: number, raw: string) {
+    const clean = raw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(-1);
+    const next = chars.slice();
+    next[i] = clean;
+    onChange(next.join('').replace(/\s+$/, ''));
+    if (clean && i < 5) refs.current[i + 1]?.focus();
+  }
+
+  function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !chars[i] && i > 0) refs.current[i - 1]?.focus();
+    if (e.key === 'ArrowLeft' && i > 0) refs.current[i - 1]?.focus();
+    if (e.key === 'ArrowRight' && i < 5) refs.current[i + 1]?.focus();
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+    onChange(text);
+    refs.current[Math.min(text.length, 5)]?.focus();
+  }
+
+  return (
+    <div className="flex justify-center gap-2" onPaste={handlePaste}>
+      {chars.map((ch, i) => (
+        <input
+          key={i}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          value={ch}
+          onChange={(e) => setChar(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          disabled={disabled}
+          inputMode="text"
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
+          maxLength={1}
+          aria-label={`Karakter token ${i + 1}`}
+          className="h-14 w-11 rounded-lg border border-gray-300 text-center font-mono text-2xl font-bold uppercase transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-50 sm:h-16 sm:w-12"
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function VotePage() {
   const [state, setState] = useState<VoteState>({ step: 'ENTER_TOKEN' });
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -43,7 +109,7 @@ export default function VotePage() {
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     const token = tokenInput.trim().toUpperCase();
-    if (!token || verifying) return;
+    if (token.length !== 6 || verifying) return;
 
     setVerifying(true);
     const res = await fetch('/api/vote/verify', {
@@ -92,10 +158,19 @@ export default function VotePage() {
   // ── SUCCESS: terminal state. Tidak ada tombol back / vote lagi. ──
   if (state.step === 'SUCCESS') {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">
-            ✓
+      <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
+        <BrandHeader />
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
+          <div className="animate-pop-in mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8">
+              <path
+                d="M5 13l4 4L19 7"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
           <h1 className="text-2xl font-bold text-green-700">Suara Terkirim</h1>
           <p className="mt-2 text-gray-600">
@@ -109,38 +184,31 @@ export default function VotePage() {
   // ── ENTER_TOKEN ──
   if (state.step === 'ENTER_TOKEN') {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
+      <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
+        <BrandHeader />
         <form
           onSubmit={handleVerify}
-          className="w-full max-w-md rounded-2xl bg-white p-8 shadow"
+          className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm"
         >
-          <h1 className="text-2xl font-bold">Masukkan Token</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-center text-2xl font-bold">Masukkan Token</h1>
+          <p className="mt-1 text-center text-sm text-gray-500">
             Ketik 6 karakter token yang kamu terima.
           </p>
 
-          <input
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-            maxLength={6}
-            inputMode="text"
-            autoCapitalize="characters"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="ABC123"
-            className="mt-5 w-full rounded-lg border border-gray-300 px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] uppercase focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          />
+          <div className="mt-6">
+            <TokenInput value={tokenInput} onChange={setTokenInput} disabled={verifying} />
+          </div>
 
           {state.error && (
-            <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-700">
               {state.error}
             </p>
           )}
 
           <button
             type="submit"
-            disabled={verifying || tokenInput.trim().length === 0}
-            className="mt-5 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={verifying || tokenInput.trim().length !== 6}
+            className="mt-6 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {verifying ? 'Memeriksa…' : 'Lanjut'}
           </button>
@@ -150,14 +218,16 @@ export default function VotePage() {
   }
 
   // ── SHOW_BALLOT / SUBMITTING ──
-  const selected = state.step === 'SHOW_BALLOT' ? state.selected : state.selected;
+  const selected = state.selected;
   const submitting = state.step === 'SUBMITTING';
   const ballotError = state.step === 'SHOW_BALLOT' ? state.error : undefined;
 
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-2xl font-bold">Surat Suara</h1>
+        <BrandHeader subtitle="Surat Suara" />
+
+        <h1 className="mt-6 text-2xl font-bold">Pilih Kandidat</h1>
         <p className="mt-1 text-sm text-gray-500">
           Pilih satu kandidat, lalu tekan Kirim Suara.
         </p>
@@ -174,40 +244,44 @@ export default function VotePage() {
                   state.step === 'SHOW_BALLOT' &&
                   setState({ step: 'SHOW_BALLOT', token: state.token, selected: c.id })
                 }
-                className={`flex gap-4 rounded-2xl border-2 bg-white p-4 text-left transition disabled:opacity-60 ${
-                  isSel ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'
+                className={`flex gap-4 rounded-2xl border-2 bg-white p-4 text-left shadow-sm transition disabled:opacity-60 ${
+                  isSel
+                    ? 'border-blue-600 ring-2 ring-blue-100'
+                    : 'border-transparent hover:border-gray-200'
                 }`}
               >
-                {c.photo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={c.photo_url}
-                    alt={c.name}
-                    className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
-                  />
-                ) : (
-                  <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-2xl text-gray-400">
-                    {c.name?.charAt(0) || '?'}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                <Avatar name={c.name} photoUrl={c.photo_url || undefined} size={72} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="truncate font-semibold">{c.name}</h2>
                     <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-full border-2 text-xs ${
+                      className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs ${
                         isSel ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'
                       }`}
                     >
-                      {isSel ? '✓' : ''}
+                      {isSel && (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+                          <path
+                            d="M5 13l4 4L19 7"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
                     </span>
-                    <h2 className="truncate font-semibold">{c.name}</h2>
                   </div>
                   {c.vision && (
-                    <p className="mt-1 text-sm text-gray-600">{c.vision}</p>
+                    <p className="mt-1 line-clamp-3 text-sm text-gray-600">{c.vision}</p>
                   )}
                 </div>
               </button>
             );
           })}
+          {candidates.length === 0 && (
+            <p className="text-sm text-gray-400">Memuat kandidat…</p>
+          )}
         </div>
 
         {ballotError && (
@@ -221,7 +295,7 @@ export default function VotePage() {
             type="button"
             onClick={handleCast}
             disabled={submitting || !selected}
-            className="w-full rounded-lg bg-blue-600 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-blue-600 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Mengirim…' : 'Kirim Suara'}
           </button>

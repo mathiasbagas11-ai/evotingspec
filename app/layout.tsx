@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ORG_NAME, ORG_PERIOD } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'E-Voting',
-  description: 'Pemilihan dengan token cetak',
+  title: `${ORG_NAME} ${ORG_PERIOD}`,
+  description: `Sistem e-voting token cetak — ${ORG_NAME} ${ORG_PERIOD}`,
 };
 
 export default function RootLayout({
