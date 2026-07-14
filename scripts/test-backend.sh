@@ -71,8 +71,12 @@ else
 fi
 
 post() {
-  # $1 = json body. -L wajib (Apps Script redirect 302).
-  curl -sL -X POST "$URL" -H 'Content-Type: application/json' -d "$1"
+  # $1 = json body.
+  # -L wajib (Apps Script redirect 302 ke googleusercontent).
+  # JANGAN pakai -X POST: digabung -L bikin curl maksa POST ke URL redirect
+  # -> "unable to open the file". -d udah otomatis bikin POST, dan tanpa
+  # -X POST curl bener-in method jadi GET pas ngikutin redirect.
+  curl -sL "$URL" -H 'Content-Type: application/json' -d "$1"
 }
 
 PASS=0
