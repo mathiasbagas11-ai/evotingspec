@@ -34,13 +34,17 @@ export function Avatar({
   const shrink = size ? 'flex-shrink-0' : '';
 
   if (photoUrl) {
+    // size (kotak tetap) -> object-cover, boleh crop biar pas kotak.
+    // Tanpa size (banner) -> TIDAK di-crop, tinggi ngikutin lebar penuh
+    // sesuai rasio asli foto (object-cover disini malah bikin kepotong).
+    const fit = size ? 'object-cover' : '';
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={photoUrl}
         alt={name}
         style={dims}
-        className={`rounded-xl object-cover ${shrink} ${className}`}
+        className={`rounded-xl ${fit} ${shrink} ${className}`}
       />
     );
   }

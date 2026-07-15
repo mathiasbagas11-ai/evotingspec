@@ -206,7 +206,11 @@ function CandidateCard({
 
       {isExpanded && hasDetails && (
         <div className="px-4 pb-4">
-          <Avatar name={c.name} photoUrl={c.photo_url || undefined} className="mb-3 h-56 w-full" />
+          <Avatar
+            name={c.name}
+            photoUrl={c.photo_url || undefined}
+            className={c.photo_url ? 'mb-3 w-full' : 'mb-3 h-56 w-full'}
+          />
           <dl className="space-y-2 text-sm">
             {c.age && (
               <div className="flex gap-2">
